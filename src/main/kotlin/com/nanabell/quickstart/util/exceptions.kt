@@ -1,6 +1,7 @@
 package com.nanabell.quickstart.util
 
 import com.nanabell.quickstart.Module
+import com.nanabell.quickstart.config.ModuleConfig
 import com.nanabell.quickstart.config.adapter.AbstractConfigAdapter
 import kotlin.reflect.KClass
 
@@ -29,6 +30,7 @@ class IllegalModuleDisableException(key: String) : ModuleException("Attempted to
 
 // Loading -> Construction
 class ModuleConstructionException(clazz: KClass<out Module<*>>, throwable: Throwable): ModuleException("Failed to construct Module $clazz!", throwable)
+class ModuleConfigConstructionException(clazz: KClass<out ModuleConfig>, throwable: Throwable): ModuleException("Failed to construct ModuleConfig $clazz!", throwable)
 class NoModulesConstructedException : ModuleException("No Modules to load after Construction Phase")
 
 // Loading -> Config Attach

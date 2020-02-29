@@ -1,6 +1,7 @@
 package com.nanabell.quickstart.loader
 
 import com.nanabell.quickstart.config.ModuleConfig
+import com.nanabell.quickstart.util.ModuleConfigConstructionException
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -10,7 +11,7 @@ class DefaultConfigConstructor : ConfigConstructor {
         return try {
             clazz.createInstance()
         } catch (e: Exception) {
-            TODO("Add custom exception")
+            throw ModuleConfigConstructionException(clazz, e)
         }
     }
 

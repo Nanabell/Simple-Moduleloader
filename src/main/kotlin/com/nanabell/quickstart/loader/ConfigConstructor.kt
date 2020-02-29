@@ -1,6 +1,7 @@
 package com.nanabell.quickstart.loader
 
 import com.nanabell.quickstart.config.ModuleConfig
+import com.nanabell.quickstart.util.ModuleConfigConstructionException
 import com.nanabell.quickstart.util.ModuleConstructionException
 import kotlin.reflect.KClass
 
@@ -13,7 +14,7 @@ interface ConfigConstructor {
      * @return The constructed [ModuleConfig]
      * @throws ModuleConstructionException If the construction has failed
      */
-    @Throws(ModuleConstructionException::class)
+    @Throws(ModuleConfigConstructionException::class)
     fun <C : ModuleConfig> createInstance(clazz: KClass<C>): C
 
 }
