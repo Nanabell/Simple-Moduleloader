@@ -4,11 +4,12 @@ plugins {
 }
 
 group = "com.nanabell.quickstart"
-version = "1.0-SNAPSHOT"
+version = "0.5.0"
 
 repositories {
     mavenCentral()
     maven("https://repo.spongepowered.org/maven/")
+    maven("https://dl.bintray.com/nanabell/Sponge-Minecraft")
 }
 
 dependencies {
