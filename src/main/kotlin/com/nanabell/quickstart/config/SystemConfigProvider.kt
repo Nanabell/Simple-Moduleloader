@@ -23,7 +23,7 @@ class SystemConfigProvider<N : ConfigurationNode, L : ConfigurationLoader<out N>
     private lateinit var moduleConfig: ModuleStatusConfigAdapter
 
     override fun attachModuleStatusConfig(modules: Map<String, ModuleMeta<*>>, moduleName: String, header: String) {
-        val moduleConfig = ModuleStatusConfigAdapter(modules.keys, modules.values.map { it.id to it.description }.toMap(), header)
+        val moduleConfig = ModuleStatusConfigAdapter(modules.keys, modules.values.map { it.id to it.description.ifEmpty { null } }.toMap(), header)
 
         moduleConfig.attachProvider(this, moduleName.toLowerCase(), nodeProvider, header)
         this.moduleConfig = moduleConfig

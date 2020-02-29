@@ -9,7 +9,7 @@ import ninja.leaping.configurate.objectmapping.ObjectMappingException
 @Suppress("UnstableApiUsage")
 class ModuleStatusConfigAdapter(
     private val defaults: Set<String>,
-    private val descriptions: Map<String, String>,
+    private val descriptions: Map<String, String?>,
     private val header: String
 ) : AbstractConfigAdapter<HashMap<String, LoadingStatus>>() {
 
@@ -22,7 +22,7 @@ class ModuleStatusConfigAdapter(
 
     override fun generateDefault(node: ConfigurationNode): ConfigurationNode {
         defaults.forEach {
-            node.getNode(it).value = LoadingStatus.ENABLED
+            node.getNode(it).value = LoadingStatus.ENABLED.toString()
 
             val comment = descriptions[it]
             if (node is CommentedConfigurationNode && comment != null) {
