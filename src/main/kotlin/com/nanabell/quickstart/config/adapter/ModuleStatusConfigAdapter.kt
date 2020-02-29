@@ -39,13 +39,13 @@ class ModuleStatusConfigAdapter(
 
     override fun retrieveFromConfigurationNode(node: ConfigurationNode): HashMap<String, LoadingStatus> {
         return try {
-            node.getValue(typeToken,defaultMap)
+            node.getValue(typeToken, defaultMap)
         } catch (e: ObjectMappingException) {
             TODO("Add Logging")
         }
     }
 
-    override fun insertIntoConfigurationNode(node: ConfigurationNode, config: HashMap<String, LoadingStatus>): ConfigurationNode {
+    override fun insertIntoConfigurationNode(node: ConfigurationNode,config: HashMap<String, LoadingStatus>): ConfigurationNode {
         return try {
             node.setValue(typeToken, config)
         } catch (e: ObjectMappingException) {

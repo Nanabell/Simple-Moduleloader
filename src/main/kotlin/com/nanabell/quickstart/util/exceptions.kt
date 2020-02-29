@@ -36,6 +36,7 @@ class NoModulesConstructedException : ModuleException("No Modules to load after 
 // Loading -> Config Attach
 class AdapterNotAttachedException(clazz: KClass<out AbstractConfigAdapter<*>>) : ModuleException("The Class $clazz has no AdaptableConfigProvider attached!")
 class ModuleAlreadyAttachedException(moduleName: String) : ModuleException("The Module $moduleName is already attached!")
+class ConfigMappingException(throwable: Throwable) : ModuleException("Module Mapping failed!", throwable)
 
 // Loading -> Pre, Enable, Post
 class MissingDependencyException(module: Module<*>, message: String) : ModuleException(module::class, message)

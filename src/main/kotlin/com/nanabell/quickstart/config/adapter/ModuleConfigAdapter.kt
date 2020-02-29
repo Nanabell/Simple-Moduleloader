@@ -4,6 +4,7 @@ import com.google.common.reflect.TypeToken
 import com.nanabell.quickstart.AbstractModule
 import com.nanabell.quickstart.config.ModuleConfig
 import com.nanabell.quickstart.loader.ConfigConstructor
+import com.nanabell.quickstart.util.ConfigMappingException
 import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.objectmapping.ObjectMappingException
 import java.lang.reflect.ParameterizedType
@@ -32,7 +33,7 @@ class ModuleConfigAdapter<C : ModuleConfig>(
         return try {
             node.setValue(typeToken, default)
         } catch (e: ObjectMappingException) {
-            TODO("Should this really just return default?. Imo if default fails we cant construct module as configs are not available")
+            throw ConfigMappingException(e)
         }
     }
 
@@ -40,7 +41,7 @@ class ModuleConfigAdapter<C : ModuleConfig>(
         return try {
             node.getValue(typeToken)
         } catch (e: ObjectMappingException) {
-            TODO("Add Logging")
+            throw ConfigMappingException(e)
         }
     }
 
@@ -48,7 +49,7 @@ class ModuleConfigAdapter<C : ModuleConfig>(
         return try {
             node.setValue(typeToken, config)
         } catch (e: ObjectMappingException) {
-            TODO("Add Logging")
+            throw ConfigMappingException(e)
         }
     }
 
