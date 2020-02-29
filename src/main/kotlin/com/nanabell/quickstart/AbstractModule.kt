@@ -3,7 +3,6 @@ package com.nanabell.quickstart
 import com.nanabell.quickstart.config.ModuleConfig
 import com.nanabell.quickstart.config.adapter.AbstractConfigAdapter
 import com.nanabell.quickstart.config.adapter.ModuleConfigAdapter
-import com.nanabell.quickstart.loader.ConfigConstructor
 
 abstract class AbstractModule<C : ModuleConfig> : Module<C> {
 
@@ -13,12 +12,8 @@ abstract class AbstractModule<C : ModuleConfig> : Module<C> {
         return getConfigAdapter().getConfig()
     }
 
-    override fun getConfigOrDefault(): C {
+    final override fun getConfigOrDefault(): C {
         return getConfigAdapter().getConfigOrDefault()
-    }
-
-    final override fun getConfigConstructor(): ConfigConstructor {
-        return super.getConfigConstructor()
     }
 
     final override fun getConfigAdapter(): AbstractConfigAdapter<C> {
