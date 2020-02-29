@@ -230,6 +230,7 @@ abstract class ModuleContainer protected constructor(
 
                 try {
                     getModuleUnchecked(key).onEnable()
+                    meta.phase = ModulePhase.ENABLED
                 } catch (e: ModuleLoadingException) {
                     moduleError(key, failOnError, e)
                 }
