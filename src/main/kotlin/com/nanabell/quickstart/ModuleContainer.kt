@@ -194,6 +194,8 @@ abstract class ModuleContainer protected constructor(
                 }
             }
 
+            configProvider.createDefaultConfigs()
+
             // Module PreEnable
             onPreEnable.invoke()
             for (key in modules.keys) {
@@ -264,7 +266,6 @@ abstract class ModuleContainer protected constructor(
                 return exitWithError(NoModulesReadyException())
             }
 
-            configProvider.createDefaultConfigs()
             currentPhase.next()
         } catch (e: ModuleDiscoveryException) {
             throw e
