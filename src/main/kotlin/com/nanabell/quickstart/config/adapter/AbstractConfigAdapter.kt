@@ -33,7 +33,7 @@ abstract class AbstractConfigAdapter<C> : ConfigAdapter<C> {
         return generateDefault(getNodeProvider().provideNode(getModule()))
     }
 
-    override fun getConfig(): C {
+    override fun getConfig(): C? {
         return retrieveFromConfigurationNode(getNodeProvider().provideNode(getModule()))
     }
 
@@ -47,7 +47,7 @@ abstract class AbstractConfigAdapter<C> : ConfigAdapter<C> {
     }
 
     override fun refreshConfig() {
-        saveConfig(getConfig())
+        saveConfig(getConfigOrDefault())
     }
 
     private fun getModule(): String = module ?: throw throw AdapterNotAttachedException(this::class)

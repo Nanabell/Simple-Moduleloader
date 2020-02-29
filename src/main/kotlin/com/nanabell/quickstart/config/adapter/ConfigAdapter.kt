@@ -22,9 +22,14 @@ interface ConfigAdapter<C> {
     fun generateDefaultConfig(): ConfigurationNode
 
     /**
-     * Return the config [C]
+     * Return the config [C] or null if not found
      */
-    fun getConfig(): C
+    fun getConfig(): C?
+
+    /**
+     * Return the config [C] or the default config
+     */
+    fun getConfigOrDefault(): C
 
     /**
      * Save the config [config]
@@ -44,7 +49,7 @@ interface ConfigAdapter<C> {
     /**
      * Retrieve the Config [C] from the [ConfigurationNode]
      */
-    fun retrieveFromConfigurationNode(node: ConfigurationNode): C
+    fun retrieveFromConfigurationNode(node: ConfigurationNode): C?
 
     /**
      * Insert the Config [C] into the [ConfigurationNode]

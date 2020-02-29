@@ -19,6 +19,15 @@ class ModuleConfigAdapter<C : ModuleConfig>(
     private val default: C = createInstance(module::class)
     private val typeToken: TypeToken<C> = TypeToken.of(default::class.java as Class<C>)
 
+    override fun getConfigOrDefault(): C {
+        return try {
+            getConfig() ?: default
+        } catch (e: Exception) {
+            e.printStackTrace() // TODO: Get the logger to here if this keeps happening often and use that instead
+            default
+        }
+    }
+
     override fun generateDefault(node: ConfigurationNode): ConfigurationNode {
         return try {
             node.setValue(typeToken, default)
@@ -27,9 +36,9 @@ class ModuleConfigAdapter<C : ModuleConfig>(
         }
     }
 
-    override fun retrieveFromConfigurationNode(node: ConfigurationNode): C {
+    override fun retrieveFromConfigurationNode(node: ConfigurationNode): C? {
         return try {
-            node.getValue(typeToken, default)
+            node.getValue(typeToken)
         } catch (e: ObjectMappingException) {
             TODO("Add Logging")
         }

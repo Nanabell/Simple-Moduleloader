@@ -9,8 +9,12 @@ abstract class AbstractModule<C : ModuleConfig> : Module<C> {
 
     private val configAdapter: ModuleConfigAdapter<C> by lazy { ModuleConfigAdapter(this, getConfigConstructor()) }
 
-    final override fun getConfig(): C {
+    final override fun getConfig(): C? {
         return getConfigAdapter().getConfig()
+    }
+
+    override fun getConfigOrDefault(): C {
+        return getConfigAdapter().getConfigOrDefault()
     }
 
     final override fun getConfigConstructor(): ConfigConstructor {

@@ -12,11 +12,19 @@ interface Module<C : ModuleConfig> {
 
     /**
      * Returns the Config from the underlying [ConfigAdapter].
-     * If no config exits this will return null TODO: Actually make that happen!
+     * If no config exits this will return null
      *
      * @return Config or null if no config exists
      */
-    fun getConfig(): C
+    fun getConfig(): C?
+
+    /**
+     * Returns the Config from the underlying [ConfigAdapter].
+     * If no config exits this will return the default config
+     *
+     * @return Config or the default config
+     */
+    fun getConfigOrDefault(): C
 
     /**
      * Performs external checks to ensure the module has everything it requires loaded.

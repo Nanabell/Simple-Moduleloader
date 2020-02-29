@@ -16,6 +16,10 @@ class ModuleStatusConfigAdapter(
     private val defaultMap = defaults.map { it to LoadingStatus.ENABLED }.toMap() as HashMap<String, LoadingStatus>
     private val typeToken: TypeToken<HashMap<String, LoadingStatus>> = object : TypeToken<HashMap<String, LoadingStatus>>() {}
 
+    override fun getConfigOrDefault(): HashMap<String, LoadingStatus> {
+        return getConfig() ?: defaultMap
+    }
+
     override fun generateDefault(node: ConfigurationNode): ConfigurationNode {
         defaults.forEach {
             node.getNode(it).value = LoadingStatus.ENABLED
