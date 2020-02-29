@@ -52,4 +52,8 @@ class ModuleStatusConfigAdapter(
             TODO("Add Logging")
         }
     }
+
+    fun getModuleKey(): String {
+        return getModule()
+    }
 }

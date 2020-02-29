@@ -50,7 +50,7 @@ abstract class AbstractConfigAdapter<C> : ConfigAdapter<C> {
         saveConfig(getConfigOrDefault())
     }
 
-    private fun getModule(): String = module ?: throw throw AdapterNotAttachedException(this::class)
+    protected fun getModule(): String = module ?: throw throw AdapterNotAttachedException(this::class)
     private fun getParent(): AdaptableConfigProvider = parent ?: throw throw AdapterNotAttachedException(this::class)
     private fun getNodeProvider(): NodeProvider = nodeProvider ?: throw throw AdapterNotAttachedException(this::class)
     private fun getHeader(): String = header ?: throw throw AdapterNotAttachedException(this::class)

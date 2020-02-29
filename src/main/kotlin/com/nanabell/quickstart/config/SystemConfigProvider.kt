@@ -72,6 +72,7 @@ class SystemConfigProvider<N : ConfigurationNode, L : ConfigurationLoader<out N>
     override fun createDefaultConfigs() {
         val root = SimpleConfigurationNode.root()
 
+        defaultModuleStatusConfig(root)
         moduleAdapters.forEach { (key, value) ->
 
             var current = value.generateDefaultConfig()
@@ -83,6 +84,14 @@ class SystemConfigProvider<N : ConfigurationNode, L : ConfigurationLoader<out N>
 
         nodeProvider.getRootNode().mergeValuesFrom(root)
         save(false)
+    }
+
+    private fun defaultModuleStatusConfig(root: ConfigurationNode) {
+        var current =  moduleConfig.generateDefaultConfig()
+        if (current.parent != null)
+            current = current.parent!!
+
+        root.getNode(moduleConfig.getModuleKey()).value = current
     }
 
 }
