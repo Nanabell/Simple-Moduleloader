@@ -8,7 +8,8 @@ import com.nanabell.quickstart.config.node.NodeProvider
 import com.nanabell.quickstart.util.ModuleAlreadyAttachedException
 import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.ConfigurationOptions
-import ninja.leaping.configurate.SimpleConfigurationNode
+import ninja.leaping.configurate.commented.CommentedConfigurationNode
+import ninja.leaping.configurate.commented.SimpleCommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 
 class SystemConfigProvider<N : ConfigurationNode, L : ConfigurationLoader<out N>>(
@@ -70,7 +71,7 @@ class SystemConfigProvider<N : ConfigurationNode, L : ConfigurationLoader<out N>
     }
 
     override fun createDefaultConfigs() {
-        val root = SimpleConfigurationNode.root()
+        val root: CommentedConfigurationNode = SimpleCommentedConfigurationNode.root()
 
         defaultModuleStatusConfig(root)
         moduleAdapters.forEach { (key, value) ->
