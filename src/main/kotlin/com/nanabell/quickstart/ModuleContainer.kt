@@ -15,17 +15,17 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
 abstract class ModuleContainer protected constructor(
-        private val configProvider: AdaptableConfigProvider,
-        private val logger: Logger,
-        private val onPreEnable: () -> Unit,
-        private val onEnable: () -> Unit,
-        private val onPostEnable: () -> Unit,
-        private val moduleConfigKey: String,
-        private val moduleConfigHeader: String?
+    private val configProvider: AdaptableConfigProvider,
+    private val logger: Logger,
+    private val onPreEnable: () -> Unit,
+    private val onEnable: () -> Unit,
+    private val onPostEnable: () -> Unit,
+    private val moduleConfigKey: String,
+    private val moduleConfigHeader: String?
 ) {
 
     private val modules: LinkedHashMap<String, Module<*>> = LinkedHashMap()
-    private val discoveredModules: LinkedHashMap<String, ModuleMeta<*>> = LinkedHashMap()
+    private val moduleMetas: LinkedHashMap<String, ModuleMeta<*>> = LinkedHashMap()
     private val disabledModules: MutableSet<String> = HashSet()
 
     private var currentPhase = ConstructionPhase.INITIALIZED
@@ -60,19 +60,31 @@ abstract class ModuleContainer protected constructor(
                 discovered[meta.id] = meta
             }
 
+            // Resolve parents
+            discovered.values.forEach { meta ->
+                meta.dependencies.forEach {
+                    val child = discovered[it] ?: throw DependencyNotFoundException(meta.moduleClass, it)
+                    child.parents.add(meta.id)
+                }
+            }
+
             // Resolve Dependency Build Order
             resolveDependencyOrder(discovered)
 
             // Build Header Config Adapter
-            val moduleSpecs = this.discoveredModules.filter { !it.value.required }
-            configProvider.attachModuleStatusConfig(moduleSpecs, this.moduleConfigKey, this.moduleConfigHeader
-                    ?: "ENABLED; DISABLED; FORCE_ENABLED")
+            val moduleSpecs = this.moduleMetas.filter { !it.value.required }
+            configProvider.attachModuleStatusConfig(
+                moduleSpecs,
+                this.moduleConfigKey,
+                this.moduleConfigHeader ?: "ENABLED; DISABLED; FORCE_ENABLED"
+            )
 
             configProvider.getModuleStatusConfig()?.getConfig()?.forEach {
                 val meta = getDiscoveredUnchecked(it.key)
                 meta.status = it.value
             }
 
+            cascadeDisable()
             checkPhase(ConstructionPhase.DISCOVERING)
         } catch (e: ModuleDiscoveryException) {
             throw e
@@ -93,7 +105,7 @@ abstract class ModuleContainer protected constructor(
 
     /**
      * Walk the dependency Tree for every module in the [discovered] map
-     * and add them to [discoveredModules] in order of dependency.
+     * and add them to [moduleMetas] in order of dependency.
      *
      * @param discovered Map of all discovered modules
      *
@@ -109,7 +121,7 @@ abstract class ModuleContainer protected constructor(
 
     /**
      * Recursive call to walk from the bottom of the Tree back up
-     * adding dependencies to [discoveredModules] as we go level back up
+     * adding dependencies to [moduleMetas] as we go level back up
      *
      * @param discovered Map of all discovered modules
      * @param meta Meta for the current module in question
@@ -119,7 +131,11 @@ abstract class ModuleContainer protected constructor(
      * @throws CircularDependencyException If a dependency self references over other dependencies
      */
     @Throws(DependencyNotFoundException::class, CircularDependencyException::class)
-    private fun resolveDependencyStep(discovered: Map<String, ModuleMeta<*>>, meta: ModuleMeta<*>, visited: MutableSet<String>) {
+    private fun resolveDependencyStep(
+        discovered: Map<String, ModuleMeta<*>>,
+        meta: ModuleMeta<*>,
+        visited: MutableSet<String>
+    ) {
         if (!visited.contains(meta.id)) {
             visited.add(meta.id)
 
@@ -133,9 +149,9 @@ abstract class ModuleContainer protected constructor(
                 resolveDependencyStep(discovered, dependency, visited)
             }
 
-            this.discoveredModules[meta.id] = meta
+            this.moduleMetas[meta.id] = meta
         } else {
-            if (!discoveredModules.containsKey(meta.id))
+            if (!moduleMetas.containsKey(meta.id))
                 throw CircularDependencyException(meta.moduleClass)
         }
     }
@@ -153,15 +169,8 @@ abstract class ModuleContainer protected constructor(
         try {
             checkPhase(ConstructionPhase.DISCOVERED)
 
-            // Cascade Disable Modules as necessary
-            cascadeDisable()
-            val illegal = disabledModules.firstOrNull { getDiscoveredUnchecked(it).required }
-            if (illegal != null) {
-                return exitWithError(IllegalModuleDisableException(illegal))
-            }
-
             // Construct Modules
-            discoveredModules.filter { it.value.status != LoadingStatus.DISABLED }.values.forEach {
+            moduleMetas.filter { it.value.status != LoadingStatus.DISABLED }.values.forEach {
 
                 try {
                     modules[it.id] = constructModule(it)
@@ -191,7 +200,7 @@ abstract class ModuleContainer protected constructor(
                 val meta = getDiscoveredUnchecked(key)
 
                 // If module is errored simply skip it
-                if (meta.phase == ModulePhase.ERRORED)
+                if (meta.phase == ModulePhase.ERRORED || meta.status == LoadingStatus.DISABLED)
                     continue
 
                 try {
@@ -202,7 +211,14 @@ abstract class ModuleContainer protected constructor(
             }
 
             // Check External Dependencies
+            cascadeDisable()
             modules.forEach {
+                val meta = getDiscoveredUnchecked(it.key)
+
+                // If module is errored simply skip it
+                if (meta.phase == ModulePhase.ERRORED || meta.status == LoadingStatus.DISABLED)
+                    return@forEach
+
                 try {
                     it.value.checkExternalDependencies()
                 } catch (e: MissingDependencyException) {
@@ -210,22 +226,14 @@ abstract class ModuleContainer protected constructor(
                 }
             }
 
-            // Cascade disable any modules that have to be disabled due to external checks failing
-            cascadeDisable()
-            modules.forEach {
-                val meta = getDiscoveredUnchecked(it.key)
-                if (meta.status == LoadingStatus.DISABLED) {
-                    modules.remove(it.key)
-                }
-            }
-
             // Module Enable
+            cascadeDisable()
             onEnable.invoke()
             for (key in modules.keys) {
                 val meta = getDiscoveredUnchecked(key)
 
                 // If module is errored simply skip it
-                if (meta.phase == ModulePhase.ERRORED)
+                if (meta.phase == ModulePhase.ERRORED || meta.status == LoadingStatus.DISABLED)
                     continue
 
                 try {
@@ -236,12 +244,13 @@ abstract class ModuleContainer protected constructor(
                 }
             }
 
+            cascadeDisable()
             onPostEnable.invoke()
             for (key in modules.keys) {
                 val meta = getDiscoveredUnchecked(key)
 
                 // If module is errored simply skip it
-                if (meta.phase == ModulePhase.ERRORED)
+                if (meta.phase == ModulePhase.ERRORED || meta.status == LoadingStatus.DISABLED)
                     continue
 
                 try {
@@ -251,7 +260,7 @@ abstract class ModuleContainer protected constructor(
                 }
             }
 
-            if (modules.isEmpty()) {
+            if (moduleMetas.filter { it.value.phase == ModulePhase.ENABLED }.isEmpty()) {
                 return exitWithError(NoModulesReadyException())
             }
 
@@ -265,23 +274,39 @@ abstract class ModuleContainer protected constructor(
     }
 
     /**
-     * Walk the [discoveredModules] in reverse order and cascade disable and modules where any dependency is marked as Disabled
+     * Walk the [moduleMetas] in reverse order and cascade disable and modules where any dependency is marked as Disabled
      *
-     * This will update the Meta information in the [discoveredModules] Map
+     * This will update the Meta information in the [moduleMetas] Map
      * as well as add the Module ids to the [disabledModules] Set
      */
     private fun cascadeDisable() {
-        val iterator = discoveredModules.entries.toList().listIterator()
-        while (iterator.hasPrevious()) {
-            val entry = iterator.previous()
+        val starters = moduleMetas.values.filter { it.dependencies.isEmpty() }
+        starters.forEach {
+            disableNextStep(it)
+        }
+    }
 
-            if (entry.value.dependencies.any { disabledModules.contains(it) }) {
-                entry.value.status = LoadingStatus.DISABLED
-            }
+    private fun disableNextStep(meta: ModuleMeta<*>) {
 
-            if (entry.value.status == LoadingStatus.DISABLED) {
-                disabledModules.add(entry.key)
+        if (meta.status != LoadingStatus.DISABLED) {
+            meta.dependencies.forEach {
+                val dependency = getDiscoveredUnchecked(it)
+
+                if (dependency.status == LoadingStatus.DISABLED) {
+                    if (meta.required)
+                        return exitWithError(IllegalModuleDisableException(meta.id))
+
+                    meta.status = LoadingStatus.DISABLED
+                    disabledModules.add(meta.id)
+
+                    return@forEach
+                }
             }
+        }
+
+        meta.parents.forEach {
+            val parent = getDiscoveredUnchecked(it)
+            disableNextStep(parent)
         }
     }
 
@@ -315,21 +340,23 @@ abstract class ModuleContainer protected constructor(
 
 
     private fun setDisabled(key: String) {
-        discoveredModules[key]?.status = LoadingStatus.DISABLED
+        moduleMetas[key]?.status = LoadingStatus.DISABLED
         modules.remove(key)
     }
 
     private fun setErrored(key: String) {
-        discoveredModules[key]?.phase = ModulePhase.ERRORED
+        moduleMetas[key]?.phase = ModulePhase.ERRORED
         modules.remove(key)
     }
 
     private fun getDiscoveredUnchecked(key: String): ModuleMeta<*> {
-        return discoveredModules[key] ?: throw IllegalAccessException("Attempted to Access $key from discoveredModules while key does not exist!")
+        return moduleMetas[key]
+            ?: throw IllegalAccessException("Attempted to Access $key from discoveredModules while key does not exist!")
     }
 
     private fun getModuleUnchecked(key: String): Module<*> {
-        return modules[key] ?: throw IllegalAccessException("Attempted to Access $key from discoveredModules while key does not exist!")
+        return modules[key]
+            ?: throw IllegalAccessException("Attempted to Access $key from discoveredModules while key does not exist!")
     }
 
     private fun checkPhase(requirement: ConstructionPhase) {

@@ -11,10 +11,12 @@ data class ModuleMeta<M : Module<*>>(
     var status: LoadingStatus,
     val required: Boolean,
     val softDependencies: List<String>,
-    val dependencies: List<String>
+    val dependencies: List<String>,
+    val parents: MutableSet<String> = mutableSetOf()
 ) {
 
     var phase: ModulePhase = ModulePhase.DISCOVERED
+
 
     constructor(moduleClass: KClass<M>, annotation: RegisterModule) : this(
         moduleClass,
