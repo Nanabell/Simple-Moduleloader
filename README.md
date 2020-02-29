@@ -1,4 +1,5 @@
 # Simple-Moduleloader
+[![Download](https://api.bintray.com/packages/nanabell/Sponge-Minecraft/simple-moduleloader/images/download.svg?version=v0.5.0) ](https://bintray.com/nanabell/Sponge-Minecraft/simple-moduleloader/v0.5.0/link)
 
 Simple Moduleloader is a Module Loading System very heavily inspired by [QuickStartModuleLoader](https://github.com/NucleusPowered/QuickStartModuleLoader)  
 but with the focus on simplicity in the Implementation but with few compromises.  
