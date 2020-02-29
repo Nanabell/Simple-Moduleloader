@@ -65,6 +65,7 @@ This Class  is the main entry point for the Module.
 ```kotlin
 import com.nanabell.quickstart.AbstractModule
 
+@RegisterModule(id = "unique-id", name = "Display Name", description = "Free Description", softDependencies = ["soft-dep1", "soft-dep2"], dependencies = ["requried-dep"], required = false /*if true cant be disabled*/)
 class DemoModule : AbstractModule<DemoConfig>() {
 
     override fun preEnable() {
