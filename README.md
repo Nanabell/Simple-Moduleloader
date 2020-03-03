@@ -1,5 +1,5 @@
 # Simple-Moduleloader
-[![Download](https://api.bintray.com/packages/nanabell/Sponge-Minecraft/simple-moduleloader/images/download.svg?version=v0.5.0) ](https://bintray.com/nanabell/Sponge-Minecraft/simple-moduleloader/v0.5.0/link)
+[ ![Download](https://api.bintray.com/packages/nanabell/Sponge-Minecraft/simple-moduleloader/images/download.svg) ](https://bintray.com/nanabell/Sponge-Minecraft/simple-moduleloader/_latestVersion)
 
 Simple Moduleloader is a Module Loading System very heavily inspired by [QuickStartModuleLoader](https://github.com/NucleusPowered/QuickStartModuleLoader)  
 but with the focus on simplicity in the Implementation but with few compromises.  
@@ -9,25 +9,6 @@ but it should also be very extensible for those that need the customization
 
 ## Before you begin!
 Please note that I (like most of my projects) have written this library in [Kotlin](https://kotlinlang.org/).  
-I am not providing the kotlin runtime within this library. you will have to provide this yourself.
-
-Include the kotlin-stdlib &  kotlin-reflect into your plugin (example using gradle [shadow](https://github.com/johnrengelman/shadow) plugin)  
-groovy `.gradle`
-```groovy
-dependencies {
-    shadow group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: '1.3.61'
-    shadow group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.3.61'
-}
-```
-
-
-Kotlin `.kts`
-```kotlin
-dependencies {
-    shadow("org.jetbrains.kotlin:stdlib-jdk8:1.3.61")
-    shadow("org.jetbrains.kotlin:kotlin-reflect:1.3.61")
-}
-```
 
 While i can imagine that using Kotlin is quite unpopular simply due to the additional size it brings with it.I don't have any plans to port this to pure java.  
 If you want to use a pure java version which is very small,
@@ -35,6 +16,21 @@ use the original [module-loader](https://github.com/NucleusPowered/QuickStartMod
 
 ## Getting Started
 
+#### Dependencies
+To include Simple-Moduleloader into your Project add the Bintray Repository & the Dependency.
+```kotlin
+repositories {
+    maven("https://dl.bintray.com/nanabell/Sponge-Minecraft")
+}
+
+dependencies {
+    implementation("com.nanabell.quickstart", "simple-moduleloader", "VERSION")
+}
+```
+simple-moduleloader has the required kotlin libraries `(v1.3.61)` as well as configurate-core `(3.6.1)` declared as runtime dependency,
+If you use e.g [shadow](https://github.com/johnrengelman/shadow) these will automatically be added to the shaded jar.
+
+#### How to get started
 To get started with Modules you need some module classes. A Module requires a few things:
 - Module Config Class that implements `com.nanabell.quickstart.config.ModuleConfig` 
 - Implement `com.nanabell.quickstart.Module<ModuleConfig>`

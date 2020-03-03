@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.nanabell.quickstart"
-version = "0.5.0"
+version = "0.5.1"
 
 repositories {
     maven("https://dl.bintray.com/nanabell/Sponge-Minecraft")
@@ -17,11 +17,11 @@ repositories {
 }
 
 dependencies {
+    implementation("org.spongepowered:configurate-core:3.6.1")
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
 
     compileOnly("org.slf4j:slf4j-api:1.7.25")
-    compileOnly("org.spongepowered:configurate-core:3.6.1")
 }
 
 
@@ -43,13 +43,32 @@ publishing {
     publications {
         create<MavenPublication>("moduleloader") {
             from(components["java"])
+
+            pom {
+                name.set("Simple Moduleloader")
+                description.set("A Module Loading Framework with the focus on Simplicity")
+
+                developers {
+                    developer {
+                        id.set("nanabell")
+                        name.set("Nanabell")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git@github.com:Nanabell/Simple-Moduleloader.git")
+                    developerConnection.set("scm:git@github.com:Nanabell/Simple-Moduleloader.git")
+                    url.set("https://github.com/Nanabell/Simple-Moduleloader")
+                }
+            }
         }
     }
 }
 
 bintray {
-    user = project.findProperty("bintrayUser").toString()
-    key = project.findProperty("bintrayKey").toString()
+    user = project.findProperty("bintray.user").toString()
+    key = project.findProperty("bintray.key").toString()
+    setPublications("moduleloader")
     publish = false
     pkg.apply {
         repo = "Sponge-Minecraft"
