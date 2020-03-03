@@ -13,17 +13,22 @@ import ninja.leaping.configurate.commented.SimpleCommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 
 class SystemConfigProvider<N : ConfigurationNode, L : ConfigurationLoader<out N>>(
-        loader: L,
-        optionsTransformer: (ConfigurationOptions) -> ConfigurationOptions
+    loader: L,
+    optionsTransformer: (ConfigurationOptions) -> ConfigurationOptions
 ) : AdaptableConfigProvider {
 
-    private val nodeProvider: NodeProvider = NodeProvider(loader, optionsTransformer, loader.load(optionsTransformer.invoke(loader.defaultOptions)))
+    private val nodeProvider: NodeProvider =
+        NodeProvider(loader, optionsTransformer, loader.load(optionsTransformer.invoke(loader.defaultOptions)))
 
     private val moduleAdapters: MutableMap<String, ConfigAdapter<*>> = HashMap()
     private lateinit var moduleConfig: ModuleStatusConfigAdapter
 
-    override fun attachModuleStatusConfig(modules: Map<String, ModuleMeta>, moduleName: String, header: String) {
-        val moduleConfig = ModuleStatusConfigAdapter(modules.keys, modules.values.map { it.id to it.description.ifEmpty { null } }.toMap(), header)
+    override fun attachModuleStatusConfig(modules: List<ModuleMeta>, moduleName: String, header: String) {
+        val moduleConfig = ModuleStatusConfigAdapter(
+            modules.map { it.id }.toSet(),
+            modules.map { it.id to it.description.ifEmpty { null } }.toMap(),
+            header
+        )
 
         moduleConfig.attachProvider(this, moduleName.toLowerCase(), nodeProvider, header)
         this.moduleConfig = moduleConfig
@@ -67,7 +72,7 @@ class SystemConfigProvider<N : ConfigurationNode, L : ConfigurationLoader<out N>
     }
 
     private fun refreshConfiguration() {
-        moduleAdapters.values.forEach { it.refreshConfig()}
+        moduleAdapters.values.forEach { it.refreshConfig() }
     }
 
     override fun createDefaultConfigs() {
@@ -88,7 +93,7 @@ class SystemConfigProvider<N : ConfigurationNode, L : ConfigurationLoader<out N>
     }
 
     private fun defaultModuleStatusConfig(root: ConfigurationNode) {
-        var current =  moduleConfig.generateDefaultConfig()
+        var current = moduleConfig.generateDefaultConfig()
         if (current.parent != null)
             current = current.parent!!
 

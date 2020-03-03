@@ -13,7 +13,7 @@ interface AdaptableConfigProvider {
      * Attach the ModuleConfigAdapter into the current [AdaptableConfigProvider]
      * Implementations may ignore this if they do not have a ModuleConfig
      */
-    fun attachModuleStatusConfig(modules: Map<String, ModuleMeta>, moduleName: String, header: String)
+    fun attachModuleStatusConfig(modules: List<ModuleMeta>, moduleName: String, header: String)
 
     /**
      * Retrieve the [ModuleStatusConfigAdapter] if the implementation supports this

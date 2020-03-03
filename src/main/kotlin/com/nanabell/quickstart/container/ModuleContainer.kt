@@ -6,6 +6,7 @@ import com.nanabell.quickstart.config.SystemConfigProvider
 import com.nanabell.quickstart.phase.ConstructionPhase
 import com.nanabell.quickstart.phase.LoadingStatus
 import com.nanabell.quickstart.phase.ModulePhase
+import com.nanabell.quickstart.strategy.ResolveStrategy
 import com.nanabell.quickstart.util.*
 import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.ConfigurationOptions
@@ -13,6 +14,9 @@ import ninja.leaping.configurate.loader.ConfigurationLoader
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
+import java.util.*
+import kotlin.collections.HashSet
+import kotlin.collections.LinkedHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
@@ -23,12 +27,13 @@ abstract class ModuleContainer protected constructor(
     private val onPreEnable: () -> Unit,
     private val onEnable: () -> Unit,
     private val onPostEnable: () -> Unit,
+    private val resolveStrategy: ResolveStrategy,
     private val moduleConfigKey: String,
     private val moduleConfigHeader: String?
 ) {
 
     private val modules: LinkedHashMap<String, Module> = LinkedHashMap()
-    private val moduleMetas: LinkedHashMap<String, ModuleMeta> = LinkedHashMap()
+    private val moduleMetas: LinkedList<ModuleMeta> = LinkedList()
     private val disabledModules: MutableSet<String> = HashSet()
 
     private var currentPhase = ConstructionPhase.INITIALIZED
@@ -75,7 +80,7 @@ abstract class ModuleContainer protected constructor(
             resolveDependencyOrder(discovered)
 
             // Build Header Config Adapter
-            val moduleSpecs = this.moduleMetas.filter { !it.value.required }
+            val moduleSpecs = this.moduleMetas.filter { !it.required }
             configProvider.attachModuleStatusConfig(
                 moduleSpecs,
                 this.moduleConfigKey,
@@ -148,9 +153,9 @@ abstract class ModuleContainer protected constructor(
                 resolveDependencyStep(discovered, dependency, visited)
             }
 
-            this.moduleMetas[meta.id] = meta
+            this.moduleMetas.add(meta)
         } else {
-            if (!moduleMetas.containsKey(meta.id))
+            if (!moduleMetas.any { it.id == meta.id })
                 throw CircularDependencyException(meta.moduleClass)
         }
     }
@@ -169,7 +174,7 @@ abstract class ModuleContainer protected constructor(
             checkPhase(ConstructionPhase.DISCOVERED)
 
             // Construct Modules
-            moduleMetas.filter { it.value.status != LoadingStatus.DISABLED }.values.forEach {
+            moduleMetas.filter { it.status != LoadingStatus.DISABLED }.forEach {
 
                 try {
                     modules[it.id] = constructModule(it)
@@ -261,7 +266,7 @@ abstract class ModuleContainer protected constructor(
                 }
             }
 
-            if (moduleMetas.filter { it.value.phase == ModulePhase.ENABLED }.isEmpty()) {
+            if (moduleMetas.none { it.phase == ModulePhase.ENABLED }) {
                 return exitWithError(NoModulesReadyException())
             }
 
@@ -280,7 +285,7 @@ abstract class ModuleContainer protected constructor(
      * as well as add the Module ids to the [disabledModules] Set
      */
     private fun cascadeDisable() {
-        val starters = moduleMetas.values.filter { it.dependencies.isEmpty() }
+        val starters = moduleMetas.filter { it.dependencies.isEmpty() }
         starters.forEach {
             disableNextStep(it)
         }
@@ -340,18 +345,17 @@ abstract class ModuleContainer protected constructor(
 
 
     private fun setDisabled(key: String) {
-        moduleMetas[key]?.status = LoadingStatus.DISABLED
+        moduleMetas.first { it.id == key }.status = LoadingStatus.DISABLED
         modules.remove(key)
     }
 
     private fun setErrored(key: String) {
-        moduleMetas[key]?.phase = ModulePhase.ERRORED
+        moduleMetas.first { it.id == key }.phase = ModulePhase.ERRORED
         modules.remove(key)
     }
 
     private fun getDiscoveredUnchecked(key: String): ModuleMeta {
-        return moduleMetas[key]
-            ?: throw IllegalAccessException("Attempted to Access $key from discoveredModules while key does not exist!")
+        return moduleMetas.first { it.id == key }
     }
 
     private fun getModuleUnchecked(key: String): Module {
