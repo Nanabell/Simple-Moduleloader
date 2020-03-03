@@ -14,6 +14,6 @@ interface ModuleConstructor {
      * @throws ModuleConstructionException If the construction has failed
      */
     @Throws(ModuleConstructionException::class)
-    fun createInstance(clazz: KClass<out Module<*>>): Module<*>
+    fun createInstance(clazz: KClass<out Module>): Module
 
 }

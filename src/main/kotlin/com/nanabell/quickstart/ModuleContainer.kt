@@ -14,6 +14,7 @@ import java.io.IOException
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
+@Suppress("unused")
 abstract class ModuleContainer protected constructor(
     private val configProvider: AdaptableConfigProvider,
     private val logger: Logger,
@@ -24,8 +25,8 @@ abstract class ModuleContainer protected constructor(
     private val moduleConfigHeader: String?
 ) {
 
-    private val modules: LinkedHashMap<String, Module<*>> = LinkedHashMap()
-    private val moduleMetas: LinkedHashMap<String, ModuleMeta<*>> = LinkedHashMap()
+    private val modules: LinkedHashMap<String, Module> = LinkedHashMap()
+    private val moduleMetas: LinkedHashMap<String, ModuleMeta> = LinkedHashMap()
     private val disabledModules: MutableSet<String> = HashSet()
 
     private var currentPhase = ConstructionPhase.INITIALIZED
@@ -43,7 +44,7 @@ abstract class ModuleContainer protected constructor(
             val modules = discoverModules()
 
             // Load Meta Information from RegisterModule Annotation
-            val discovered: MutableMap<String, ModuleMeta<*>> = mutableMapOf()
+            val discovered: MutableMap<String, ModuleMeta> = mutableMapOf()
             for (module in modules) {
                 val registerModule = module.findAnnotation<RegisterModule>()
                 if (registerModule == null) {
@@ -101,7 +102,7 @@ abstract class ModuleContainer protected constructor(
      * @return Set of ModuleClasses
      */
     @Throws(ModuleDiscoveryException::class)
-    protected abstract fun discoverModules(): Set<KClass<out Module<*>>>
+    protected abstract fun discoverModules(): Set<KClass<out Module>>
 
     /**
      * Walk the dependency Tree for every module in the [discovered] map
@@ -113,7 +114,7 @@ abstract class ModuleContainer protected constructor(
      * @throws CircularDependencyException If a dependency self references over other dependencies
      */
     @Throws(DependencyNotFoundException::class, CircularDependencyException::class)
-    private fun resolveDependencyOrder(discovered: Map<String, ModuleMeta<*>>) {
+    private fun resolveDependencyOrder(discovered: Map<String, ModuleMeta>) {
         discovered.forEach {
             resolveDependencyStep(discovered, it.value, mutableSetOf())
         }
@@ -131,11 +132,7 @@ abstract class ModuleContainer protected constructor(
      * @throws CircularDependencyException If a dependency self references over other dependencies
      */
     @Throws(DependencyNotFoundException::class, CircularDependencyException::class)
-    private fun resolveDependencyStep(
-        discovered: Map<String, ModuleMeta<*>>,
-        meta: ModuleMeta<*>,
-        visited: MutableSet<String>
-    ) {
+    private fun resolveDependencyStep(discovered: Map<String, ModuleMeta>, meta: ModuleMeta,visited: MutableSet<String>) {
         if (!visited.contains(meta.id)) {
             visited.add(meta.id)
 
@@ -186,9 +183,9 @@ abstract class ModuleContainer protected constructor(
             }
 
             // Load Module Configs
-            modules.forEach {
+            modules.filter { it is ConfigModule<*> }.forEach {
                 try {
-                    attachConfig(it.key, it.value)
+                    attachConfig(it.key, it.value as ConfigModule<*>)
                 } catch (e: ModuleAlreadyAttachedException) {
                     moduleError(it.key, failOnError, e)
                 }
@@ -287,7 +284,7 @@ abstract class ModuleContainer protected constructor(
         }
     }
 
-    private fun disableNextStep(meta: ModuleMeta<*>) {
+    private fun disableNextStep(meta: ModuleMeta) {
 
         if (meta.status != LoadingStatus.DISABLED) {
             meta.dependencies.forEach {
@@ -319,7 +316,7 @@ abstract class ModuleContainer protected constructor(
      * @return Constructed Module
      */
     @Throws(ModuleConstructionException::class)
-    protected abstract fun constructModule(meta: ModuleMeta<*>): Module<*>
+    protected abstract fun constructModule(meta: ModuleMeta): Module
 
     @Throws(IOException::class)
     fun refreshSystemConfig() {
@@ -331,7 +328,7 @@ abstract class ModuleContainer protected constructor(
         configProvider.reload()
     }
 
-    private fun attachConfig(name: String, module: Module<*>) {
+    private fun attachConfig(name: String, module: ConfigModule<*>) {
         configProvider.attachConfigAdapter(name, module.getConfigAdapter(), null)
     }
 
@@ -350,12 +347,12 @@ abstract class ModuleContainer protected constructor(
         modules.remove(key)
     }
 
-    private fun getDiscoveredUnchecked(key: String): ModuleMeta<*> {
+    private fun getDiscoveredUnchecked(key: String): ModuleMeta {
         return moduleMetas[key]
             ?: throw IllegalAccessException("Attempted to Access $key from discoveredModules while key does not exist!")
     }
 
-    private fun getModuleUnchecked(key: String): Module<*> {
+    private fun getModuleUnchecked(key: String): Module {
         return modules[key]
             ?: throw IllegalAccessException("Attempted to Access $key from discoveredModules while key does not exist!")
     }

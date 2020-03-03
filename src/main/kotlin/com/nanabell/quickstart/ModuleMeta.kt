@@ -3,8 +3,8 @@ package com.nanabell.quickstart
 import com.nanabell.quickstart.phase.ModulePhase
 import kotlin.reflect.KClass
 
-data class ModuleMeta<M : Module<*>>(
-    val moduleClass: KClass<M>,
+data class ModuleMeta (
+    val moduleClass: KClass<out Module>,
     val id: String,
     val name: String,
     val description: String,
@@ -18,7 +18,7 @@ data class ModuleMeta<M : Module<*>>(
     var phase: ModulePhase = ModulePhase.DISCOVERED
 
 
-    constructor(moduleClass: KClass<M>, annotation: RegisterModule) : this(
+    constructor(moduleClass: KClass<out Module>, annotation: RegisterModule) : this(
         moduleClass,
         annotation.id,
         annotation.name,

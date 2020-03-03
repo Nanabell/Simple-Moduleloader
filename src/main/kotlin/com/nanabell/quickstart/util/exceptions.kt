@@ -12,24 +12,24 @@ open class ModuleDiscoveryException : Exception {
 }
 
 open class ModuleException : ModuleDiscoveryException {
-    constructor(clazz: KClass<out Module<*>>, message: String) : super("$message, $clazz")
+    constructor(clazz: KClass<out Module>, message: String) : super("$message, $clazz")
     constructor(message: String, throwable: Throwable): super(message, throwable)
     constructor(message: String): super(message)
 }
 
 // Discovery
-class ModuleAlreadyRegistered(clazz: KClass<out Module<*>>, id: String) : ModuleException("Unable to register $clazz, Module id '$id' is already registered!")
+class ModuleAlreadyRegistered(clazz: KClass<out Module>, id: String) : ModuleException("Unable to register $clazz, Module id '$id' is already registered!")
 
 // Discovery -> Dependency
 open class DependencyException(message: String) : ModuleException(message)
-class DependencyNotFoundException(clazz: KClass<out Module<*>>, dependency: String) : DependencyException("Dependency $dependency of Module $clazz does not exists!")
-class CircularDependencyException(clazz: KClass<out Module<*>>) : DependencyException("Class $clazz has caused a circular dependencies!")
+class DependencyNotFoundException(clazz: KClass<out Module>, dependency: String) : DependencyException("Dependency $dependency of Module $clazz does not exists!")
+class CircularDependencyException(clazz: KClass<out Module>) : DependencyException("Class $clazz has caused a circular dependencies!")
 
 // Loading
 class IllegalModuleDisableException(key: String) : ModuleException("Attempted to disable required Module $key!")
 
 // Loading -> Construction
-class ModuleConstructionException(clazz: KClass<out Module<*>>, throwable: Throwable): ModuleException("Failed to construct Module $clazz!", throwable)
+class ModuleConstructionException(clazz: KClass<out Module>, throwable: Throwable): ModuleException("Failed to construct Module $clazz!", throwable)
 class ModuleConfigConstructionException(clazz: KClass<out ModuleConfig>, throwable: Throwable): ModuleException("Failed to construct ModuleConfig $clazz!", throwable)
 class NoModulesConstructedException : ModuleException("No Modules to load after Construction Phase")
 
@@ -39,6 +39,6 @@ class ModuleAlreadyAttachedException(moduleName: String) : ModuleException("The 
 class ConfigMappingException(throwable: Throwable) : ModuleException("Module Mapping failed!", throwable)
 
 // Loading -> Pre, Enable, Post
-class MissingDependencyException(module: Module<*>, message: String) : ModuleException(module::class, message)
-class ModuleLoadingException(module: Module<*>, message: String) : ModuleException(module::class, message)
+class MissingDependencyException(module: Module, message: String) : ModuleException(module::class, message)
+class ModuleLoadingException(module: Module, message: String) : ModuleException(module::class, message)
 class NoModulesReadyException : ModuleException("No Modules are Enabled After Enable Phase!")

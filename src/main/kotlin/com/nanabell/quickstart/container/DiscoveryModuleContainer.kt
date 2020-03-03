@@ -15,6 +15,7 @@ import org.slf4j.Logger
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
+@Suppress("unused")
 class DiscoveryModuleContainer private constructor(
         configProvider: AdaptableConfigProvider,
         logger: Logger,
@@ -40,12 +41,11 @@ class DiscoveryModuleContainer private constructor(
     private val loadedClasses: MutableSet<KClass<*>> = HashSet()
 
     @Suppress("UNCHECKED_CAST")
-    override fun discoverModules(): Set<KClass<out Module<*>>> {
+    override fun discoverModules(): Set<KClass<out Module>> {
         loadedClasses.addAll(this.strategy.discover(this.basePackage, this.classLoader))
 
-        val modules = loadedClasses
-                .filter { clazz -> clazz.isSubclassOf(Module::class) }
-                .map { it as KClass<out Module<*>> }
+        val modules = loadedClasses.filter { clazz -> clazz.isSubclassOf(Module::class) }
+                .map { it as KClass<out Module> }
 
         if (modules.isEmpty()) {
             throw ModuleDiscoveryException("No Modules were found!")
@@ -55,7 +55,7 @@ class DiscoveryModuleContainer private constructor(
     }
 
     @Throws(ModuleConstructionException::class)
-    override fun constructModule(meta: ModuleMeta<*>): Module<*> {
+    override fun constructModule(meta: ModuleMeta): Module {
         return this.constructor.createInstance(meta.moduleClass)
     }
 
