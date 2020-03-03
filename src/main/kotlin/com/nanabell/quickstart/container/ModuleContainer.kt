@@ -6,6 +6,7 @@ import com.nanabell.quickstart.config.SystemConfigProvider
 import com.nanabell.quickstart.phase.ConstructionPhase
 import com.nanabell.quickstart.phase.LoadingStatus
 import com.nanabell.quickstart.phase.ModulePhase
+import com.nanabell.quickstart.strategy.RecursiveResolveStrategy
 import com.nanabell.quickstart.strategy.ResolveStrategy
 import com.nanabell.quickstart.util.*
 import ninja.leaping.configurate.ConfigurationNode
@@ -51,7 +52,7 @@ abstract class ModuleContainer protected constructor(
             val modules = discoverModules()
 
             // Load Meta Information from RegisterModule Annotation
-            val discovered: MutableMap<String, ModuleMeta> = mutableMapOf()
+            val discovered: MutableList<ModuleMeta> = mutableListOf()
             for (module in modules) {
                 val registerModule = module.findAnnotation<RegisterModule>()
                 if (registerModule == null) {
@@ -61,23 +62,23 @@ abstract class ModuleContainer protected constructor(
 
                 // Check for Unique Module Id
                 val meta = ModuleMeta(module, registerModule)
-                if (discovered.containsKey(meta.id)) {
+                if (discovered.any { it.id == meta.id }) {
                     return exitWithError(ModuleAlreadyRegistered(meta.moduleClass, meta.id))
                 }
 
-                discovered[meta.id] = meta
+                discovered.add(meta)
             }
 
             // Resolve parents
-            discovered.values.forEach { meta ->
-                meta.dependencies.forEach {
-                    val child = discovered[it] ?: throw DependencyNotFoundException(meta.moduleClass, it)
+            discovered.forEach { meta ->
+                meta.dependencies.forEach {dependency ->
+                    val child = discovered.firstOrNull { it.id == dependency }  ?: throw DependencyNotFoundException(meta.moduleClass, dependency)
                     child.parents.add(meta.id)
                 }
             }
 
             // Resolve Dependency Build Order
-            resolveDependencyOrder(discovered)
+            moduleMetas.addAll(resolveStrategy.resolveModuleDependencies(discovered))
 
             // Build Header Config Adapter
             val moduleSpecs = this.moduleMetas.filter { !it.required }
@@ -110,55 +111,6 @@ abstract class ModuleContainer protected constructor(
      */
     @Throws(ModuleDiscoveryException::class)
     protected abstract fun discoverModules(): Set<KClass<out Module>>
-
-    /**
-     * Walk the dependency Tree for every module in the [discovered] map
-     * and add them to [moduleMetas] in order of dependency.
-     *
-     * @param discovered Map of all discovered modules
-     *
-     * @throws DependencyNotFoundException If a Dependency of a Module could not be found in the [discovered] map
-     * @throws CircularDependencyException If a dependency self references over other dependencies
-     */
-    @Throws(DependencyNotFoundException::class, CircularDependencyException::class)
-    private fun resolveDependencyOrder(discovered: Map<String, ModuleMeta>) {
-        discovered.forEach {
-            resolveDependencyStep(discovered, it.value, mutableSetOf())
-        }
-    }
-
-    /**
-     * Recursive call to walk from the bottom of the Tree back up
-     * adding dependencies to [moduleMetas] as we go level back up
-     *
-     * @param discovered Map of all discovered modules
-     * @param meta Meta for the current module in question
-     * @param visited Set containing all module ids we've already visited
-     *
-     * @throws DependencyNotFoundException If a Dependency of a Module could not be found in the [discovered] map
-     * @throws CircularDependencyException If a dependency self references over other dependencies
-     */
-    @Throws(DependencyNotFoundException::class, CircularDependencyException::class)
-    private fun resolveDependencyStep(discovered: Map<String, ModuleMeta>, meta: ModuleMeta, visited: MutableSet<String>) {
-        if (!visited.contains(meta.id)) {
-            visited.add(meta.id)
-
-            meta.softDependencies.forEach {
-                val softDependency = discovered[it] ?: throw DependencyNotFoundException(meta.moduleClass, it)
-                resolveDependencyStep(discovered, softDependency, visited)
-            }
-
-            meta.dependencies.forEach {
-                val dependency = discovered[it] ?: throw DependencyNotFoundException(meta.moduleClass, it)
-                resolveDependencyStep(discovered, dependency, visited)
-            }
-
-            this.moduleMetas.add(meta)
-        } else {
-            if (!moduleMetas.any { it.id == meta.id })
-                throw CircularDependencyException(meta.moduleClass)
-        }
-    }
 
     /**
      * Construct all modules and enable them in the discovered Order.
@@ -393,6 +345,7 @@ abstract class ModuleContainer protected constructor(
         protected lateinit var configurationLoader: ConfigurationLoader<out ConfigurationNode>
         protected lateinit var configProvider: AdaptableConfigProvider
 
+        private var resolveStrategy: ResolveStrategy = RecursiveResolveStrategy()
         protected var configTransformer: (ConfigurationOptions) -> ConfigurationOptions = { x -> x }
         protected var onPreEnable: () -> Unit = {}
         protected var onEnable: () -> Unit = {}
@@ -410,6 +363,12 @@ abstract class ModuleContainer protected constructor(
 
         fun setConfigurationOptionsTransformer(configTransformer: (ConfigurationOptions) -> ConfigurationOptions): T {
             this.configTransformer = configTransformer
+
+            return getThis()
+        }
+
+        fun setResolveStrategy(resolveStrategy: ResolveStrategy): T {
+            this.resolveStrategy = resolveStrategy
 
             return getThis()
         }
