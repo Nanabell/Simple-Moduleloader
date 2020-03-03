@@ -33,7 +33,7 @@ abstract class ModuleContainer protected constructor(
     private val moduleConfigHeader: String?
 ) {
 
-    private val modules: LinkedHashMap<String, Module> = LinkedHashMap()
+    private val modules: LinkedHashMap<ModuleMeta, Module> = LinkedHashMap()
     private val moduleMetas: LinkedList<ModuleMeta> = LinkedList()
     private val disabledModules: MutableSet<String> = HashSet()
 
@@ -129,10 +129,10 @@ abstract class ModuleContainer protected constructor(
             moduleMetas.filter { it.status != LoadingStatus.DISABLED }.forEach {
 
                 try {
-                    modules[it.id] = constructModule(it)
+                    modules[it] = constructModule(it)
                     it.phase = ModulePhase.CONSTRUCTED
                 } catch (e: ModuleConstructionException) {
-                    moduleError(it.id, failOnError, e)
+                    moduleError(it, failOnError, e)
                 }
             }
 
@@ -142,11 +142,11 @@ abstract class ModuleContainer protected constructor(
             }
 
             // Load Module Configs
-            modules.filter { it is ConfigModule<*> }.forEach {
+            modules.filter { it.value is ConfigModule<*> }.forEach { (meta, module) ->
                 try {
-                    attachConfig(it.key, it.value as ConfigModule<*>)
+                    attachConfig(meta.id, module as ConfigModule<*>)
                 } catch (e: ModuleAlreadyAttachedException) {
-                    moduleError(it.key, failOnError, e)
+                    moduleError(meta, failOnError, e)
                 }
             }
 
@@ -154,67 +154,63 @@ abstract class ModuleContainer protected constructor(
 
             // Module PreEnable
             onPreEnable.invoke()
-            for (key in modules.keys) {
-                val meta = getDiscoveredUnchecked(key)
+            for ((meta, module) in modules.entries) {
 
                 // If module is errored simply skip it
                 if (meta.phase == ModulePhase.ERRORED || meta.status == LoadingStatus.DISABLED)
                     continue
 
                 try {
-                    getModuleUnchecked(key).preEnable()
+                    module.preEnable()
                 } catch (e: ModuleLoadingException) {
-                    moduleError(key, failOnError, e)
+                    moduleError(meta, failOnError, e)
                 }
             }
 
             // Check External Dependencies
             cascadeDisable()
-            modules.forEach {
-                val meta = getDiscoveredUnchecked(it.key)
+            modules.forEach { (meta, module) ->
 
                 // If module is errored simply skip it
                 if (meta.phase == ModulePhase.ERRORED || meta.status == LoadingStatus.DISABLED)
                     return@forEach
 
                 try {
-                    it.value.checkExternalDependencies()
+                    module.checkExternalDependencies()
                 } catch (e: MissingDependencyException) {
-                    moduleError(it.key, failOnError, e)
+                    moduleError(meta, failOnError, e)
                 }
             }
 
             // Module Enable
             cascadeDisable()
             onEnable.invoke()
-            for (key in modules.keys) {
-                val meta = getDiscoveredUnchecked(key)
+            for ((meta, module) in modules.entries) {
 
                 // If module is errored simply skip it
                 if (meta.phase == ModulePhase.ERRORED || meta.status == LoadingStatus.DISABLED)
                     continue
 
                 try {
-                    getModuleUnchecked(key).onEnable()
+                    module.onEnable()
                     meta.phase = ModulePhase.ENABLED
                 } catch (e: ModuleLoadingException) {
-                    moduleError(key, failOnError, e)
+                    moduleError(meta, failOnError, e)
                 }
             }
 
             cascadeDisable()
             onPostEnable.invoke()
-            for (key in modules.keys) {
-                val meta = getDiscoveredUnchecked(key)
+            for ((meta, module) in modules.entries) {
 
                 // If module is errored simply skip it
                 if (meta.phase == ModulePhase.ERRORED || meta.status == LoadingStatus.DISABLED)
                     continue
 
                 try {
-                    getModuleUnchecked(key).postEnable()
+                    module.postEnable()
                 } catch (e: ModuleLoadingException) {
-                    moduleError(key, failOnError, e)
+                    moduleError(meta, failOnError, e)
                 }
             }
 
@@ -296,23 +292,18 @@ abstract class ModuleContainer protected constructor(
     }
 
 
-    private fun setDisabled(key: String) {
-        moduleMetas.first { it.id == key }.status = LoadingStatus.DISABLED
-        modules.remove(key)
+    private fun setDisabled(meta: ModuleMeta) {
+        meta.status = LoadingStatus.DISABLED
+        modules.remove(meta)
     }
 
-    private fun setErrored(key: String) {
-        moduleMetas.first { it.id == key }.phase = ModulePhase.ERRORED
-        modules.remove(key)
+    private fun setErrored(meta: ModuleMeta) {
+        meta.phase = ModulePhase.ERRORED
+        modules.remove(meta)
     }
 
     private fun getDiscoveredUnchecked(key: String): ModuleMeta {
         return moduleMetas.first { it.id == key }
-    }
-
-    private fun getModuleUnchecked(key: String): Module {
-        return modules[key]
-            ?: throw IllegalAccessException("Attempted to Access $key from discoveredModules while key does not exist!")
     }
 
     private fun checkPhase(requirement: ConstructionPhase) {
@@ -329,9 +320,9 @@ abstract class ModuleContainer protected constructor(
         throw e
     }
 
-    private fun moduleError(key: String, failOnError: Boolean, e: Exception) {
-        setDisabled(key)
-        setErrored(key)
+    private fun moduleError(meta: ModuleMeta, failOnError: Boolean, e: Exception) {
+        setDisabled(meta)
+        setErrored(meta)
 
         if (failOnError)
             throw e
@@ -340,13 +331,13 @@ abstract class ModuleContainer protected constructor(
 
     abstract class Builder<R : ModuleContainer, T : Builder<R, T>> {
 
+        private lateinit var configurationLoader: ConfigurationLoader<out ConfigurationNode>
+        private var configTransformer: (ConfigurationOptions) -> ConfigurationOptions = { x -> x }
+
         protected lateinit var logger: Logger
         protected lateinit var moduleConfigKey: String
-        protected lateinit var configurationLoader: ConfigurationLoader<out ConfigurationNode>
         protected lateinit var configProvider: AdaptableConfigProvider
-
-        private var resolveStrategy: ResolveStrategy = RecursiveResolveStrategy()
-        protected var configTransformer: (ConfigurationOptions) -> ConfigurationOptions = { x -> x }
+        protected var resolveStrategy: ResolveStrategy = RecursiveResolveStrategy()
         protected var onPreEnable: () -> Unit = {}
         protected var onEnable: () -> Unit = {}
         protected var onPostEnable: () -> Unit = {}

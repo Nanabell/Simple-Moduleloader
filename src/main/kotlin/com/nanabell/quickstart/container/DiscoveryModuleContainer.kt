@@ -8,6 +8,7 @@ import com.nanabell.quickstart.loader.DefaultModuleConstructor
 import com.nanabell.quickstart.loader.ModuleConstructor
 import com.nanabell.quickstart.strategy.GoogleDiscoverStrategy
 import com.nanabell.quickstart.strategy.DiscoverStrategy
+import com.nanabell.quickstart.strategy.ResolveStrategy
 import com.nanabell.quickstart.util.ModuleConstructionException
 import com.nanabell.quickstart.util.ModuleDiscoveryException
 import org.slf4j.Logger
@@ -16,25 +17,27 @@ import kotlin.reflect.full.isSubclassOf
 
 @Suppress("unused")
 class DiscoveryModuleContainer private constructor(
-        configProvider: AdaptableConfigProvider,
-        logger: Logger,
-        onPreEnable: () -> Unit,
-        onEnable: () -> Unit,
-        onPostEnable: () -> Unit,
-        moduleConfigKey: String,
-        moduleConfigHeader: String?,
-        private val classLoader: ClassLoader,
-        private val basePackage: String,
-        private val constructor: ModuleConstructor,
-        private val discoverStrategy: DiscoverStrategy
+    configProvider: AdaptableConfigProvider,
+    logger: Logger,
+    onPreEnable: () -> Unit,
+    onEnable: () -> Unit,
+    onPostEnable: () -> Unit,
+    moduleConfigKey: String,
+    moduleConfigHeader: String?,
+    resolveStrategy: ResolveStrategy,
+    private val classLoader: ClassLoader,
+    private val basePackage: String,
+    private val constructor: ModuleConstructor,
+    private val discoverStrategy: DiscoverStrategy
 ) : ModuleContainer(
-        configProvider,
-        logger,
-        onPreEnable,
-        onEnable,
-        onPostEnable,
-        moduleConfigKey,
-        moduleConfigHeader
+    configProvider,
+    logger,
+    onPreEnable,
+    onEnable,
+    onPostEnable,
+    resolveStrategy,
+    moduleConfigKey,
+    moduleConfigHeader
 ) {
 
     private val loadedClasses: MutableSet<KClass<*>> = HashSet()
@@ -44,7 +47,7 @@ class DiscoveryModuleContainer private constructor(
         loadedClasses.addAll(this.discoverStrategy.discover(this.basePackage, this.classLoader))
 
         val modules = loadedClasses.filter { clazz -> clazz.isSubclassOf(Module::class) }
-                .map { it as KClass<out Module> }
+            .map { it as KClass<out Module> }
 
         if (modules.isEmpty()) {
             throw ModuleDiscoveryException("No Modules were found!")
@@ -106,7 +109,20 @@ class DiscoveryModuleContainer private constructor(
             if (!::classLoader.isInitialized)
                 classLoader = javaClass.classLoader
 
-            return DiscoveryModuleContainer(configProvider, logger, onPreEnable, onEnable, onPostEnable, moduleConfigKey, moduleConfigHeader, classLoader, packageToScan, constructor, discoverStrategy)
+            return DiscoveryModuleContainer(
+                configProvider,
+                logger,
+                onPreEnable,
+                onEnable,
+                onPostEnable,
+                moduleConfigKey,
+                moduleConfigHeader,
+                resolveStrategy,
+                classLoader,
+                packageToScan,
+                constructor,
+                discoverStrategy
+            )
         }
     }
 }
