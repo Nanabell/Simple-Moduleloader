@@ -2,7 +2,7 @@ package com.nanabell.quickstart.strategy
 
 import kotlin.reflect.KClass
 
-interface Strategy {
+interface DiscoverStrategy {
 
     /**
      * Discover accessible classes using the specified [ClassLoader]

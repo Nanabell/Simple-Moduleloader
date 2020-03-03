@@ -6,8 +6,8 @@ import com.nanabell.quickstart.ModuleMeta
 import com.nanabell.quickstart.config.AdaptableConfigProvider
 import com.nanabell.quickstart.loader.DefaultModuleConstructor
 import com.nanabell.quickstart.loader.ModuleConstructor
-import com.nanabell.quickstart.strategy.GoogleStrategy
-import com.nanabell.quickstart.strategy.Strategy
+import com.nanabell.quickstart.strategy.GoogleDiscoverStrategy
+import com.nanabell.quickstart.strategy.DiscoverStrategy
 import com.nanabell.quickstart.util.ModuleConstructionException
 import com.nanabell.quickstart.util.ModuleDiscoveryException
 import org.slf4j.Logger
@@ -26,7 +26,7 @@ class DiscoveryModuleContainer private constructor(
         private val classLoader: ClassLoader,
         private val basePackage: String,
         private val constructor: ModuleConstructor,
-        private val strategy: Strategy
+        private val discoverStrategy: DiscoverStrategy
 ) : ModuleContainer(
         configProvider,
         logger,
@@ -41,7 +41,7 @@ class DiscoveryModuleContainer private constructor(
 
     @Suppress("UNCHECKED_CAST")
     override fun discoverModules(): Set<KClass<out Module>> {
-        loadedClasses.addAll(this.strategy.discover(this.basePackage, this.classLoader))
+        loadedClasses.addAll(this.discoverStrategy.discover(this.basePackage, this.classLoader))
 
         val modules = loadedClasses.filter { clazz -> clazz.isSubclassOf(Module::class) }
                 .map { it as KClass<out Module> }
@@ -73,7 +73,7 @@ class DiscoveryModuleContainer private constructor(
         private lateinit var classLoader: ClassLoader
 
         private var constructor: ModuleConstructor = DefaultModuleConstructor()
-        private var strategy: Strategy = GoogleStrategy()
+        private var discoverStrategy: DiscoverStrategy = GoogleDiscoverStrategy()
 
 
         fun setPackageToScan(packageToScan: String): Builder {
@@ -94,8 +94,8 @@ class DiscoveryModuleContainer private constructor(
             return getThis()
         }
 
-        fun setStrategy(strategy: Strategy): Builder {
-            this.strategy = strategy
+        fun setDiscoverStrategy(discoverStrategy: DiscoverStrategy): Builder {
+            this.discoverStrategy = discoverStrategy
 
             return getThis()
         }
@@ -106,7 +106,7 @@ class DiscoveryModuleContainer private constructor(
             if (!::classLoader.isInitialized)
                 classLoader = javaClass.classLoader
 
-            return DiscoveryModuleContainer(configProvider, logger, onPreEnable, onEnable, onPostEnable, moduleConfigKey, moduleConfigHeader, classLoader, packageToScan, constructor, strategy)
+            return DiscoveryModuleContainer(configProvider, logger, onPreEnable, onEnable, onPostEnable, moduleConfigKey, moduleConfigHeader, classLoader, packageToScan, constructor, discoverStrategy)
         }
     }
 }

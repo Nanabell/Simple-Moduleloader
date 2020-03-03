@@ -3,7 +3,7 @@ package com.nanabell.quickstart.strategy
 import com.google.common.reflect.ClassPath
 import kotlin.reflect.KClass
 
-class GoogleStrategy : Strategy {
+class GoogleDiscoverStrategy : DiscoverStrategy {
 
     @Suppress("UnstableApiUsage")
     override fun discover(rootPackage: String, classLoader: ClassLoader): Collection<KClass<*>> {

@@ -1,12 +1,12 @@
 package com.nanabell.quickstart.phase
 
 import com.nanabell.quickstart.loader.ModuleConstructor
-import com.nanabell.quickstart.strategy.Strategy
+import com.nanabell.quickstart.strategy.DiscoverStrategy
 
 enum class ModulePhase {
 
     /**
-     * Module has been found by a [Strategy].
+     * Module has been found by a [DiscoverStrategy].
      */
     DISCOVERED,
 

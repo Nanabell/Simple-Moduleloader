@@ -1,4 +1,4 @@
-package com.nanabell.quickstart
+package com.nanabell.quickstart.phase
 
 enum class LoadingStatus {
 
