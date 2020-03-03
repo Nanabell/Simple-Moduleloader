@@ -4,6 +4,7 @@ import com.nanabell.quickstart.*
 import com.nanabell.quickstart.config.AdaptableConfigProvider
 import com.nanabell.quickstart.config.SystemConfigProvider
 import com.nanabell.quickstart.phase.ConstructionPhase
+import com.nanabell.quickstart.phase.LoadingStatus
 import com.nanabell.quickstart.phase.ModulePhase
 import com.nanabell.quickstart.util.*
 import ninja.leaping.configurate.ConfigurationNode

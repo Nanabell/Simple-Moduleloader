@@ -1,5 +1,6 @@
 package com.nanabell.quickstart
 
+import com.nanabell.quickstart.phase.LoadingStatus
 import com.nanabell.quickstart.phase.ModulePhase
 import kotlin.reflect.KClass
 

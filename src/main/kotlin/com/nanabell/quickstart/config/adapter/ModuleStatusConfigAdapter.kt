@@ -1,7 +1,7 @@
 package com.nanabell.quickstart.config.adapter
 
 import com.google.common.reflect.TypeToken
-import com.nanabell.quickstart.LoadingStatus
+import com.nanabell.quickstart.phase.LoadingStatus
 import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.objectmapping.ObjectMappingException
