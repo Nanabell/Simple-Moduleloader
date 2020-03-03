@@ -1,5 +1,6 @@
-package com.nanabell.quickstart
+package com.nanabell.quickstart.container
 
+import com.nanabell.quickstart.*
 import com.nanabell.quickstart.config.AdaptableConfigProvider
 import com.nanabell.quickstart.config.SystemConfigProvider
 import com.nanabell.quickstart.phase.ConstructionPhase
@@ -132,7 +133,7 @@ abstract class ModuleContainer protected constructor(
      * @throws CircularDependencyException If a dependency self references over other dependencies
      */
     @Throws(DependencyNotFoundException::class, CircularDependencyException::class)
-    private fun resolveDependencyStep(discovered: Map<String, ModuleMeta>, meta: ModuleMeta,visited: MutableSet<String>) {
+    private fun resolveDependencyStep(discovered: Map<String, ModuleMeta>, meta: ModuleMeta, visited: MutableSet<String>) {
         if (!visited.contains(meta.id)) {
             visited.add(meta.id)
 

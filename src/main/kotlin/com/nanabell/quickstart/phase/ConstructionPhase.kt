@@ -1,6 +1,6 @@
 package com.nanabell.quickstart.phase
 
-import com.nanabell.quickstart.ModuleContainer
+import com.nanabell.quickstart.container.ModuleContainer
 
 enum class ConstructionPhase {
 

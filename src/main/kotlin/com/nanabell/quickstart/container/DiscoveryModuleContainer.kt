@@ -2,7 +2,6 @@ package com.nanabell.quickstart.container
 
 import com.google.common.collect.ImmutableSet
 import com.nanabell.quickstart.Module
-import com.nanabell.quickstart.ModuleContainer
 import com.nanabell.quickstart.ModuleMeta
 import com.nanabell.quickstart.config.AdaptableConfigProvider
 import com.nanabell.quickstart.loader.DefaultModuleConstructor
@@ -28,7 +27,7 @@ class DiscoveryModuleContainer private constructor(
         private val basePackage: String,
         private val constructor: ModuleConstructor,
         private val strategy: Strategy
-) : ModuleContainer (
+) : ModuleContainer(
         configProvider,
         logger,
         onPreEnable,
