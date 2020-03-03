@@ -22,7 +22,7 @@ interface ConfigModule<C : ModuleConfig> : Module {
      * Adapter Bridge between the Module & the Config layer.
      * Necessary for loading & saving configs at startup.
      *
-     * Implementations can use the [AbstractModule] to have this handled automatically
+     * Implementations can use the [ConfigurableModule] to have this handled automatically
      *
      * @return AbstractConfigAdapter<ModuleConfig>
      */

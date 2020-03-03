@@ -4,7 +4,7 @@ import com.nanabell.quickstart.config.ModuleConfig
 import com.nanabell.quickstart.config.adapter.AbstractConfigAdapter
 import com.nanabell.quickstart.config.adapter.ModuleConfigAdapter
 
-abstract class AbstractModule<C : ModuleConfig> : ConfigModule<C> {
+abstract class ConfigurableModule<C : ModuleConfig> : ConfigModule<C> {
 
     private val configAdapter: ModuleConfigAdapter<C> by lazy { ModuleConfigAdapter(this, getConfigConstructor()) }
 

@@ -1,7 +1,7 @@
 package com.nanabell.quickstart.config.adapter
 
 import com.google.common.reflect.TypeToken
-import com.nanabell.quickstart.AbstractModule
+import com.nanabell.quickstart.ConfigurableModule
 import com.nanabell.quickstart.config.ModuleConfig
 import com.nanabell.quickstart.loader.ConfigConstructor
 import com.nanabell.quickstart.util.ConfigMappingException
@@ -13,8 +13,8 @@ import kotlin.reflect.full.isSuperclassOf
 
 @Suppress("UnstableApiUsage", "UNCHECKED_CAST")
 class ModuleConfigAdapter<C : ModuleConfig>(
-        module: AbstractModule<C>,
-        private val constructor: ConfigConstructor
+    module: ConfigurableModule<C>,
+    private val constructor: ConfigConstructor
 ) : AbstractConfigAdapter<C>() {
 
     private val default: C = createInstance(module::class)
@@ -54,9 +54,9 @@ class ModuleConfigAdapter<C : ModuleConfig>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun createInstance(clazz: KClass<out AbstractModule<C>>): C {
-        if (!AbstractModule::class.isSuperclassOf(clazz))
-            throw IllegalArgumentException("Class $clazz is not a Subclass of ${AbstractModule::class}!")
+    private fun createInstance(clazz: KClass<out ConfigurableModule<C>>): C {
+        if (!ConfigurableModule::class.isSuperclassOf(clazz))
+            throw IllegalArgumentException("Class $clazz is not a Subclass of ${ConfigurableModule::class}!")
 
         val type = clazz.java.genericSuperclass
         if (type is ParameterizedType) {
