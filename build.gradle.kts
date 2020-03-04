@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.nanabell.quickstart"
-version = "0.5.1"
+version = "0.6.0"
 
 repositories {
     maven("https://dl.bintray.com/nanabell/Sponge-Minecraft")
