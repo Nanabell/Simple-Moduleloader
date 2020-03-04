@@ -1,6 +1,9 @@
 package com.nanabell.quickstart.container
 
-import com.nanabell.quickstart.*
+import com.nanabell.quickstart.ConfigModule
+import com.nanabell.quickstart.Module
+import com.nanabell.quickstart.ModuleMeta
+import com.nanabell.quickstart.RegisterModule
 import com.nanabell.quickstart.config.AdaptableConfigProvider
 import com.nanabell.quickstart.config.SystemConfigProvider
 import com.nanabell.quickstart.phase.ConstructionPhase
@@ -16,7 +19,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.*
-import kotlin.collections.HashSet
 import kotlin.collections.LinkedHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
@@ -35,7 +37,6 @@ abstract class ModuleContainer protected constructor(
 
     private val modules: LinkedHashMap<ModuleMeta, Module> = LinkedHashMap()
     private val moduleMetas: LinkedList<ModuleMeta> = LinkedList()
-    private val disabledModules: MutableSet<String> = HashSet()
 
     private var currentPhase = ConstructionPhase.INITIALIZED
 
@@ -230,7 +231,6 @@ abstract class ModuleContainer protected constructor(
      * Walk the [moduleMetas] in reverse order and cascade disable and modules where any dependency is marked as Disabled
      *
      * This will update the Meta information in the [moduleMetas] Map
-     * as well as add the Module ids to the [disabledModules] Set
      */
     private fun cascadeDisable() {
         val starters = moduleMetas.filter { it.dependencies.isEmpty() }
@@ -250,8 +250,6 @@ abstract class ModuleContainer protected constructor(
                         return exitWithError(IllegalModuleDisableException(meta.id))
 
                     meta.status = LoadingStatus.DISABLED
-                    disabledModules.add(meta.id)
-
                     return@forEach
                 }
             }
