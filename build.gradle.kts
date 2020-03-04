@@ -1,6 +1,6 @@
 plugins {
     id("com.jfrog.bintray") version "1.8.4"
-    kotlin("jvm") version "1.3.61"
+    kotlin("jvm") version "1.3.70"
     id("maven-publish")
     id("java-library")
     java
